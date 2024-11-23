@@ -1,0 +1,66 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.5'
+	id 'io.spring.dependency-management' version '1.1.6'
+	id 'org.graalvm.buildtools.native' version '0.10.3'
+}
+
+group = 'pl.edu.pjwstk'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set('timefoldSolverVersion', "1.15.0")
+}
+
+def timefoldVersion = "1.15.0"
+
+dependencies {
+	implementation platform("ai.timefold.solver:timefold-solver-bom:${timefoldVersion}")
+
+
+
+	// Spring-boot
+	implementation "org.springframework.boot:spring-boot-starter-web"
+	implementation "ai.timefold.solver:timefold-solver-spring-boot-starter"
+
+	// Swagger
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0"
+
+	// Testing
+	testImplementation("org.springframework.boot:spring-boot-starter-test")
+	testImplementation("ai.timefold.solver:timefold-solver-test")
+	testImplementation("org.springframework:spring-webflux")
+	testImplementation "org.awaitility:awaitility"
+	testImplementation "org.assertj:assertj-core:3.26.3"
+
+	// UI
+	// No webjar locator; incompatible in native mode;
+	// see https://github.com/spring-projects/spring-framework/issues/27619
+	// and https://github.com/webjars/webjars-locator-core/issues/96
+	// runtimeOnly "org.webjars:webjars-locator:0.50"
+	runtimeOnly "ai.timefold.solver:timefold-solver-webui"
+	runtimeOnly "org.webjars:bootstrap:5.2.3"
+	runtimeOnly "org.webjars:jquery:3.6.4"
+	runtimeOnly "org.webjars:font-awesome:5.15.1"
+	runtimeOnly "org.webjars.npm:js-joda:1.11.0"
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "ai.timefold.solver:timefold-solver-bom:${timefoldSolverVersion}"
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
