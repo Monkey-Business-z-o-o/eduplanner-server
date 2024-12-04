@@ -4,23 +4,39 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import jakarta.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
 
+
+@Entity
+@Table(name = "Lesson")
 @PlanningEntity
 public class Lesson {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "LessonID")
     @PlanningId
     private String id;
 
+    @Column(name = "subject")
     private String subject;
+
+    @Column(name = "teacher")
     private String teacher;
+
+    @Column(name = "student_group")
     private String studentGroup;
 
     @JsonIdentityReference
     @PlanningVariable
+    @ManyToOne
     private Timeslot timeslot;
 
     @JsonIdentityReference
     @PlanningVariable
+    @ManyToOne
     private Room room;
 
     public Lesson() {

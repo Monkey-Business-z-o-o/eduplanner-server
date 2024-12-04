@@ -1,20 +1,34 @@
 package pl.edu.pjwstk.EduPlanner.domain;
 
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import jakarta.persistence.*;
+import org.hibernate.annotations.GenericGenerator;
+import pl.edu.pjwstk.EduPlanner.rest.LocalTimeDeserializer;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
-@JsonIdentityInfo(scope = Timeslot.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+@Entity
+@Table(name = "Timeslot")
 public class Timeslot {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
+    @Column(name = "TimeslotID")
     @PlanningId
     private String id;
 
+    @Column(name = "DayOfWeek")
     private DayOfWeek dayOfWeek;
+
+    @Column(name = "StartTime")
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
     private LocalTime startTime;
+
+    @Column(name = "EndTime")
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
     private LocalTime endTime;
 
     public Timeslot() {
@@ -28,7 +42,7 @@ public class Timeslot {
     }
 
     public Timeslot(String id, DayOfWeek dayOfWeek, LocalTime startTime) {
-        this(id, dayOfWeek, startTime, startTime.plusMinutes(50));
+        this(id, dayOfWeek, startTime, startTime.plusMinutes(45));
     }
 
     @Override
