@@ -15,33 +15,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Sprawdzenie kodu
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Ustawienie Dockera
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # Ustawienie zmiennych środowiskowych
       - name: Set up environment variables
         run: |
           echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
           echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
-      - name: Set up Docker Compose
-        run: docker-compose up -d
+      # Uruchomienie usług z Docker Compose
+      - name: Start services with Docker Compose
+        run: docker compose -f docker-compose.yml up -d
 
+      # Oczekiwanie na gotowość bazy danych
       - name: Wait for Database to be Ready
         run: |
           for i in {1..10}; do
-            docker exec ci-postgres pg_isready -U $POSTGRES_USER && break
+            docker exec eduplanner-database pg_isready -U test_user && break
             sleep 5
           done
 
+      # Ustawienie JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # Nadanie uprawnień do Gradle Wrapper
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
+      # Uruchomienie testów
       - name: Run tests
         run: ./gradlew test
+
+      # Zatrzymanie usług po zakończeniu
+      - name: Stop and remove services
+        if: always()
+        run: docker compose down
