@@ -28,15 +28,29 @@ jobs:
           echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
           echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
-      # Instalacja Docker Compose (jeśli nie jest zainstalowany)
-      - name: Install Docker Compose
+      # Weryfikacja zmiennych środowiskowych (debugowanie)
+      - name: Debug environment variables
+        run: printenv | grep -E "DB_DATA_VOLUME|SPRING_PROFILES_ACTIVE|POSTGRES_"
+
+      # Instalacja Docker Compose Plugin
+      - name: Install Docker Compose Plugin
         run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
+          sudo apt-get update
+          sudo apt-get install -y docker-compose-plugin
+
+      # Debugowanie wersji Dockera i Compose
+      - name: Verify Docker and Compose version
+        run: |
+          docker --version
+          docker compose version
 
       # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
-        run: docker-compose -f ./eduplanner-server/docker-compose.yml up -d
+        run: docker compose -f ./eduplanner-server/docker-compose.yml up -d
+
+      # Debugowanie: lista kontenerów Docker
+      - name: List running Docker containers
+        run: docker ps -a
 
       # Oczekiwanie na gotowość bazy danych
       - name: Wait for Database to be Ready
@@ -64,4 +78,4 @@ jobs:
       # Zatrzymanie usług po zakończeniu
       - name: Stop and remove services
         if: always()
-        run: docker-compose -f docker-compose.yml down
+        run: docker compose -f ./eduplanner-server/docker-compose.yml down
