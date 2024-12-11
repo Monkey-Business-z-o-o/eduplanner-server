@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 @SpringBootTest(properties = {
         // Effectively disable spent-time termination in favor of the best-score-limit
-        "timefold.solver.termination.spent-limit=1h",
+//        "timefold.solver.termination.spent-limit=1h",
         "timefold.solver.termination.best-score-limit=0hard/*soft" },
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class TimetableControllerTest {

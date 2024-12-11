@@ -5,35 +5,38 @@ services:
     image: postgres:15
     container_name: eduplanner-database
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-test_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
-      POSTGRES_DB: ${POSTGRES_DB:-edudb}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: eduplanner
     volumes:
-      - ${DB_DATA_VOLUME:-/srv/test/db_data}:/var/lib/postgresql/data
-      - ../eduplanner-database/edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-test_user}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    stdin_open: true  # Umożliwia wejście do kontenera
+    tty: true         # Umożliwia uruchomienie interaktywnej powłoki
 
   backend:
     build:
-      context: ../eduplanner-server
+      context: ../eduplanner-server  # Ścieżka do repozytorium backendu
     container_name: eduplanner-backend
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-test}
-      POSTGRES_USER: ${POSTGRES_USER:-test_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
-      POSTGRES_DB: ${POSTGRES_DB:-edudb}
-      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-edudb}
+      SPRING_PROFILES_ACTIVE: production
+      DATABASE_URL: jdbc:postgresql://database:5432/eduplanner
     depends_on:
-      database:
-        condition: service_healthy
+      - database
     ports:
       - "8080:8080"
+    stdin_open: true  # Umożliwia wejście do kontenera
+    tty: true         # Umożliwia uruchomienie interaktywnej powłoki
+
+  frontend:
+    build:
+      context: ../eduplanner-app  # Ścieżka do repozytorium frontendu
+    container_name: eduplanner-frontend
+    ports:
+      - "3000:3000"
+    stdin_open: true  # Umożliwia wejście do kontenera
+    tty: true         # Umożliwia uruchomienie interaktywnej powłoki
 
 volumes:
   db_data:
