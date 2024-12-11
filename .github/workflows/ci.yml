@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI Pipeline with Database
 
 on:
   push:
@@ -14,21 +14,56 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root123
+          POSTGRES_DB: eduplanner
+        options: >-
+          --health-cmd "pg_isready -U root"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
+      # 1. Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Set up Java environment
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 3. Grant execute permissions for Gradle wrapper
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
+      # 4. Wait for PostgreSQL to be ready
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            pg_isready -h 127.0.0.1 -U root && break
+            echo "Waiting for PostgreSQL..."
+            sleep 5
+          done
+
+      # 5. Set environment variables for database connection
+      - name: Set database environment variables
+        run: |
+          echo "DATABASE_URL=jdbc:postgresql://127.0.0.1:5432/eduplanner" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=ci" >> $GITHUB_ENV
+
+      # 6. Build the project
       - name: Build project
         run: ./gradlew build
 
+      # 7. Run tests
       - name: Run tests
         run: ./gradlew test
