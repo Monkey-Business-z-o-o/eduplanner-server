@@ -1,17 +1,17 @@
-# Użyj obrazu z JDK 17 jako podstawy
+# Użycie obrazu z JDK
 FROM openjdk:17-jdk-slim
 
-# Ustaw katalog roboczy
+# Ustawienie katalogu roboczego
 WORKDIR /app
 
-# Skopiuj pliki projektu
+# Kopiowanie wszystkich plików z repozytorium
 COPY . .
 
-# Zbuduj aplikację
+# Nadanie uprawnień do wykonania dla Gradle Wrapper
+RUN chmod +x ./gradlew
+
+# Budowanie projektu
 RUN ./gradlew build --no-daemon
 
-# Ustaw port, na którym działa aplikacja
-EXPOSE 8080
-
-# Uruchom aplikację
-CMD ["java", "-jar", "build/libs/eduplanner.jar"]
+# Komenda startowa (przykład - dostosuj w razie potrzeby)
+CMD ["java", "-jar", "build/libs/<nazwa_twojego_pliku.jar>"]
