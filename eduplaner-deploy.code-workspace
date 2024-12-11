@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../eduplaner-deploy"
+		},
+		{
+			"path": "../eduplanner-app"
+		},
+		{
+			"path": "../eduplanner-database"
+		},
+		{
+			"path": "."
+		}
+	]
+}

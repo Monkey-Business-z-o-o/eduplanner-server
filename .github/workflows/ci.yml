@@ -18,6 +18,60 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set environment variables
+        run: |
+          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
+          echo "POSTGRES_DB=edudb" >> $GITHUB_ENV
+
+      - name: Debug environment variables
+        run: |
+          echo "Environment Variables:"
+          env | grep -E "DB_DATA_VOLUME|SPRING_PROFILES_ACTIVE|POSTGRES_"
+
+      - name: Install Docker Compose
+        run: |
+          if ! [ -x "$(command -v docker-compose)" ]; then
+            curl -SL https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+          fi
+          docker-compose --version
+
+      - name: Verify Docker Compose file
+        run: |
+          if [ ! -f ./docker-compose.yml ]; then
+            echo "Error: docker-compose.yml file not found!"
+            exit 1
+          fi
+          docker-compose -f ./docker-compose.yml config
+
+      - name: Start services with Docker Compose
+        run: docker-compose -f ./docker-compose.yml up -d
+
+      - name: List running Docker containers
+        run: docker ps -a
+
+      - name: Debug Database Logs
+        run: docker logs eduplanner-database || true
+
+      - name: Wait for Database to be Ready
+        run: |
+          for i in {1..10}; do
+            docker exec eduplanner-database pg_isready -U $POSTGRES_USER && break
+            echo "Waiting for database..."
+            sleep 5
+          done || (echo "Database is not ready. Fetching logs:" && docker logs eduplanner-database && exit 1)
+
+      - name: Check Backend Health
+        run: |
+          for i in {1..10}; do
+            curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' && break
+            echo "Waiting for backend..."
+            sleep 5
+          done || (echo "Backend is not healthy. Fetching logs:" && docker logs eduplanner-backend && exit 1)
+
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -27,8 +81,13 @@ jobs:
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Build project
-        run: ./gradlew build
-
       - name: Run tests
         run: ./gradlew test
+
+      - name: Fetch logs from backend if tests fail
+        if: failure()
+        run: docker logs eduplanner-backend || true
+
+      - name: Stop and remove services
+        if: always()
+        run: docker-compose -f ./docker-compose.yml down --remove-orphans
