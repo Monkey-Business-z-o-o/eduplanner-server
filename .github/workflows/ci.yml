@@ -28,6 +28,10 @@ jobs:
           echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
           echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
+      # Instalacja Docker Compose
+      - name: Install Docker Compose
+        run: sudo apt-get update && sudo apt-get install -y docker-compose-plugin
+
       # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
         run: docker compose -f docker-compose.yml up -d
