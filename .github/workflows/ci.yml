@@ -15,11 +15,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout kodu
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Ustawienie zmiennych środowiskowych
       - name: Set environment variables
         run: |
           echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
@@ -28,13 +26,11 @@ jobs:
           echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
           echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
-      # Debugowanie zmiennych środowiskowych
       - name: Debug environment variables
         run: |
           echo "Environment Variables:"
           env | grep -E "DB_DATA_VOLUME|SPRING_PROFILES_ACTIVE|POSTGRES_"
 
-      # Instalacja Docker Compose (z weryfikacją obecności)
       - name: Install Docker Compose
         run: |
           if ! [ -x "$(command -v docker-compose)" ]; then
@@ -43,7 +39,6 @@ jobs:
           fi
           docker-compose --version
 
-      # Weryfikacja poprawności pliku Docker Compose
       - name: Verify Docker Compose file
         run: |
           if [ ! -f ./docker-compose.yml ]; then
@@ -52,15 +47,15 @@ jobs:
           fi
           docker-compose -f ./docker-compose.yml config
 
-      # Uruchomienie kontenerów
       - name: Start services with Docker Compose
         run: docker-compose -f ./docker-compose.yml up -d
 
-      # Lista uruchomionych kontenerów
       - name: List running Docker containers
         run: docker ps -a
 
-      # Oczekiwanie na gotowość bazy danych
+      - name: Debug Database Logs
+        run: docker logs eduplanner-database || true
+
       - name: Wait for Database to be Ready
         run: |
           for i in {1..10}; do
@@ -69,7 +64,6 @@ jobs:
             sleep 5
           done || (echo "Database is not ready. Fetching logs:" && docker logs eduplanner-database && exit 1)
 
-      # Weryfikacja statusu backendu przed testami
       - name: Check Backend Health
         run: |
           for i in {1..10}; do
@@ -78,27 +72,22 @@ jobs:
             sleep 5
           done || (echo "Backend is not healthy. Fetching logs:" && docker logs eduplanner-backend && exit 1)
 
-      # Ustawienie JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Nadanie uprawnień dla Gradle Wrapper
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
-      # Uruchomienie testów
       - name: Run tests
         run: ./gradlew test
 
-      # Pobranie logów backendu w przypadku niepowodzenia testów
       - name: Fetch logs from backend if tests fail
         if: failure()
         run: docker logs eduplanner-backend || true
 
-      # Zatrzymanie i usunięcie usług
       - name: Stop and remove services
         if: always()
         run: docker-compose -f ./docker-compose.yml down --remove-orphans
