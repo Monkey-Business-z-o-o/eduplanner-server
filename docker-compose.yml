@@ -6,8 +6,8 @@ services:
     container_name: eduplanner-database
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-test_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test_password}
-      POSTGRES_DB: ${POSTGRES_DB:-testdb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
+      POSTGRES_DB: ${POSTGRES_DB:-edudb}
     volumes:
       - ${DB_DATA_VOLUME:-/srv/test/db_data}:/var/lib/postgresql/data
       - ../eduplanner-database/edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
@@ -26,11 +26,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-test}
       POSTGRES_USER: ${POSTGRES_USER:-test_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test_password}
-      POSTGRES_DB: ${POSTGRES_DB:-testdb}
-      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-testdb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
+      POSTGRES_DB: ${POSTGRES_DB:-edudb}
+      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-edudb}
     depends_on:
       database:
         condition: service_healthy
     ports:
       - "8080:8080"
+
+volumes:
+  db_data:
