@@ -22,19 +22,21 @@ jobs:
       # Ustawienie zmiennych środowiskowych
       - name: Set environment variables
         run: |
-          echo "DB_DATA_VOLUME=/var/lib/postgresql/data" >> $GITHUB_ENV
+          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
           echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
           echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
           echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
-      # Instalacja Docker Compose
+      # Instalacja Docker Compose (jeśli nie jest zainstalowany)
       - name: Install Docker Compose
-        run: sudo apt-get update && sudo apt-get install -y docker-compose-plugin
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
 
       # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
-        run: docker compose -f docker-compose.yml up -d
+        run: docker-compose -f docker-compose.yml up -d
 
       # Oczekiwanie na gotowość bazy danych
       - name: Wait for Database to be Ready
@@ -62,4 +64,4 @@ jobs:
       # Zatrzymanie usług po zakończeniu
       - name: Stop and remove services
         if: always()
-        run: docker compose -f docker-compose.yml down
+        run: docker-compose -f docker-compose.yml down
