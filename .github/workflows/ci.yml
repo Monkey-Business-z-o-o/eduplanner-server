@@ -15,20 +15,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout kodu
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Ustawienie zmiennych środowiskowych
       - name: Set environment variables
         run: |
-          echo "DB_DATA_VOLUME=/srv/test/db_data" >> .env
-          echo "SPRING_PROFILES_ACTIVE=test" >> .env
-          echo "POSTGRES_USER=test_user" >> .env
-          echo "POSTGRES_PASSWORD=test_password" >> .env
-          echo "POSTGRES_DB=testdb" >> .env
+          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
+          echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
+      # Debugowanie zmiennych środowiskowych
       - name: Debug environment variables
-        run: cat .env
+        run: |
+          echo "Environment Variables:"
+          env | grep -E "DB_DATA_VOLUME|SPRING_PROFILES_ACTIVE|POSTGRES_"
 
+      # Instalacja Docker Compose (z weryfikacją obecności)
       - name: Install Docker Compose
         run: |
           if ! [ -x "$(command -v docker-compose)" ]; then
@@ -37,43 +43,62 @@ jobs:
           fi
           docker-compose --version
 
+      # Weryfikacja poprawności pliku Docker Compose
       - name: Verify Docker Compose file
         run: |
           if [ ! -f ./docker-compose.yml ]; then
-            echo "docker-compose.yml file not found!"
+            echo "Error: docker-compose.yml file not found!"
             exit 1
           fi
+          docker-compose -f ./docker-compose.yml config
 
+      # Uruchomienie kontenerów
       - name: Start services with Docker Compose
         run: docker-compose -f ./docker-compose.yml up -d
 
+      # Lista uruchomionych kontenerów
       - name: List running Docker containers
         run: docker ps -a
 
+      # Oczekiwanie na gotowość bazy danych
       - name: Wait for Database to be Ready
         run: |
           for i in {1..10}; do
-            docker exec eduplanner-database pg_isready -U test_user && break
+            docker exec eduplanner-database pg_isready -U $POSTGRES_USER && break
             echo "Waiting for database..."
             sleep 5
           done || (echo "Database is not ready. Fetching logs:" && docker logs eduplanner-database && exit 1)
 
+      # Weryfikacja statusu backendu przed testami
+      - name: Check Backend Health
+        run: |
+          for i in {1..10}; do
+            curl -s http://localhost:8080/actuator/health | grep '"status":"UP"' && break
+            echo "Waiting for backend..."
+            sleep 5
+          done || (echo "Backend is not healthy. Fetching logs:" && docker logs eduplanner-backend && exit 1)
+
+      # Ustawienie JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # Nadanie uprawnień dla Gradle Wrapper
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
+      # Uruchomienie testów
       - name: Run tests
         run: ./gradlew test
 
+      # Pobranie logów backendu w przypadku niepowodzenia testów
       - name: Fetch logs from backend if tests fail
         if: failure()
         run: docker logs eduplanner-backend || true
 
+      # Zatrzymanie i usunięcie usług
       - name: Stop and remove services
         if: always()
         run: docker-compose -f ./docker-compose.yml down --remove-orphans
