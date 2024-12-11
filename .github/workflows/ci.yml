@@ -36,7 +36,7 @@ jobs:
 
       # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
-        run: docker-compose -f docker-compose.yml up -d
+        run: docker-compose -f ./eduplanner-server/docker-compose.yml up -d
 
       # Oczekiwanie na gotowość bazy danych
       - name: Wait for Database to be Ready
