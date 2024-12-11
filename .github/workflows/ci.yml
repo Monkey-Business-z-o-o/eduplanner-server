@@ -19,18 +19,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Ustawienie Dockera
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2
-
       # Ustawienie zmiennych środowiskowych
-      - name: Set up environment variables
+      - name: Set environment variables
         run: |
+          echo "DB_DATA_VOLUME=/var/lib/postgresql/data" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
           echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
           echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
 
-      # Uruchomienie usług z Docker Compose
+      # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
         run: docker compose -f docker-compose.yml up -d
 
@@ -60,4 +58,4 @@ jobs:
       # Zatrzymanie usług po zakończeniu
       - name: Stop and remove services
         if: always()
-        run: docker compose down
+        run: docker compose -f docker-compose.yml down
