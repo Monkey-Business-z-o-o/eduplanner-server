@@ -1,65 +1,38 @@
-name: CI Pipeline
+version: '3.8'
 
-on:
-  push:
-    branches:
-      - main
-      - dev
-  pull_request:
-    branches:
-      - main
-      - dev
+services:
+  database:
+    image: postgres:15
+    container_name: eduplanner-database
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ${DB_DATA_VOLUME}:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+  backend:
+    build:
+      context: ../eduplanner-server
+    container_name: eduplanner-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB}
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
 
-    steps:
-      # Sprawdzenie kodu
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Ustawienie zmiennych środowiskowych
-      - name: Set environment variables
-        run: |
-          echo "DB_DATA_VOLUME=/var/lib/postgresql/data" >> $GITHUB_ENV
-          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
-          echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
-          echo "POSTGRES_PASSWORD=test_password" >> $GITHUB_ENV
-          echo "POSTGRES_DB=testdb" >> $GITHUB_ENV
-
-      # Instalacja Docker Compose
-      - name: Install Docker Compose
-        run: sudo apt-get update && sudo apt-get install -y docker-compose-plugin
-
-      # Uruchomienie usług Docker Compose
-      - name: Start services with Docker Compose
-        run: docker compose -f docker-compose.yml up -d
-
-      # Oczekiwanie na gotowość bazy danych
-      - name: Wait for Database to be Ready
-        run: |
-          for i in {1..10}; do
-            docker exec eduplanner-database pg_isready -U test_user && break
-            sleep 5
-          done
-
-      # Ustawienie JDK
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      # Nadanie uprawnień do Gradle Wrapper
-      - name: Grant execute permission for Gradle wrapper
-        run: chmod +x ./gradlew
-
-      # Uruchomienie testów
-      - name: Run tests
-        run: ./gradlew test
-
-      # Zatrzymanie usług po zakończeniu
-      - name: Stop and remove services
-        if: always()
-        run: docker compose -f docker-compose.yml down
+volumes:
+  db_data:

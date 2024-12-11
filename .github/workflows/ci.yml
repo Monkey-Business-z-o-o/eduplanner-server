@@ -75,6 +75,11 @@ jobs:
       - name: Run tests
         run: ./gradlew test
 
+      # Debugowanie: listowanie dzienników backendu
+      - name: Fetch Backend Logs
+        if: failure()
+        run: docker logs eduplanner-backend || true
+
       # Zatrzymanie usług po zakończeniu
       - name: Stop and remove services
         if: always()
