@@ -32,21 +32,22 @@ jobs:
       - name: Debug environment variables
         run: printenv | grep -E "DB_DATA_VOLUME|SPRING_PROFILES_ACTIVE|POSTGRES_"
 
-      # Instalacja Docker Compose Plugin
-      - name: Install Docker Compose Plugin
+      # Instalacja Docker Compose (oficjalna metoda)
+      - name: Install Docker Compose
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose-plugin
+          curl -SL https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          docker-compose version
 
       # Debugowanie wersji Dockera i Compose
       - name: Verify Docker and Compose version
         run: |
           docker --version
-          docker compose version
+          docker-compose --version
 
       # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
-        run: docker compose -f ./eduplanner-server/docker-compose.yml up -d
+        run: docker-compose -f ./docker-compose.yml up -d
 
       # Debugowanie: lista kontenerów Docker
       - name: List running Docker containers
@@ -83,4 +84,4 @@ jobs:
       # Zatrzymanie usług po zakończeniu
       - name: Stop and remove services
         if: always()
-        run: docker compose -f ./eduplanner-server/docker-compose.yml down
+        run: docker-compose -f ./docker-compose.yml down
