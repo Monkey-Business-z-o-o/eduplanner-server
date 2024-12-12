@@ -107,3 +107,10 @@ jobs:
       - name: Stop and remove services
         if: always()
         run: docker-compose -f ./docker-compose.yml down
+
+      - name: Debug SQL Files
+        run: |
+              ls -l
+              ls -l eduplanner-database
+              cat eduplanner-database/edudb.sql
+
