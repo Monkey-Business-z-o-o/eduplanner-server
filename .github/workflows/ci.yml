@@ -61,6 +61,15 @@ jobs:
           docker --version
           docker-compose --version
 
+      # Dodajemy plik .dockerignore, aby wykluczyć edudb.sql z kontekstu
+      - name: Create .dockerignore in build context
+        run: |
+          echo "edudb.sql" >> ../eduplanner-server/.dockerignore
+
+      # Debugowanie plików przed uruchomieniem docker-compose
+      - name: Debug repository files
+        run: ls -R
+
       # Uruchomienie usług Docker Compose
       - name: Start services with Docker Compose
         run: docker-compose -f ./docker-compose.yml up -d
