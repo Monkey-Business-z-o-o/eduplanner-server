@@ -14,4 +14,4 @@ RUN chmod +x ./gradlew
 RUN ./gradlew build --no-daemon
 
 # Komenda startowa (przykład - dostosuj w razie potrzeby)
-CMD ["java", "-jar", "docker.io/library/spring-boot-school-timetabling:1.0-SNAPSHOT"]
+CMD ["java", "-jar", "build/libs/myapp-1.0-SNAPSHOT.jar"]
