@@ -10,11 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Sprawdzenie kodu
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Ustawienie zmiennych środowiskowych
       - name: Set environment variables
         run: |
           echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
@@ -23,15 +21,13 @@ jobs:
           echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
           echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
 
-      # Weryfikacja zmiennych środowiskowych (debugowanie)
       - name: Print environment variables
         run: printenv | grep -E "DB_DATA_VOLUME|SPRING_PROFILES_ACTIVE|POSTGRES_"
 
-      # Dodatkowa weryfikacja kluczowych zmiennych środowiskowych
       - name: Verify environment variables
         run: |
           if [ "$SPRING_PROFILES_ACTIVE" != "test" ]; then
-            echo "SPRING_PROFILES_ACTIVE is not set to 'test'."
+            echo "SPRING_PROFILES_ACTIVE is not 'test'."
             exit 1
           fi
           if [ "$POSTGRES_USER" != "root" ]; then
@@ -48,40 +44,35 @@ jobs:
           fi
           echo "All environment variables are set correctly."
 
-      # Instalacja Docker Compose
       - name: Install Docker Compose
         run: |
           curl -SL https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
           chmod +x /usr/local/bin/docker-compose
           docker-compose version
 
-      # Debugowanie wersji Dockera i Compose
       - name: Verify Docker and Compose version
         run: |
           docker --version
           docker-compose --version
 
-      # Wyświetlenie zawartości kontekstu builda przed uruchomieniem
+      # Sprawdzenie zawartości kontekstu builda
       - name: Debug build context
         run: ls -lR ../eduplanner-server
 
-      # Wyświetlenie zawartości Dockerfile
+      # Wyświetlenie Dockerfile
       - name: Show Dockerfile
         run: cat ../eduplanner-server/Dockerfile
 
-      # Budowanie obrazów bez cache
       - name: Build without cache
         run: docker-compose -f ./docker-compose.yml build --no-cache
 
-      # Uruchomienie usług Docker Compose
+      # Uruchomienie kontenerów
       - name: Start services with Docker Compose
         run: docker-compose -f ./docker-compose.yml up -d
 
-      # Debugowanie: lista kontenerów Docker
       - name: List running Docker containers
         run: docker ps -a
 
-      # Oczekiwanie na gotowość bazy danych
       - name: Wait for Database to be Ready
         run: |
           for i in {1..10}; do
@@ -89,32 +80,32 @@ jobs:
             sleep 5
           done
 
-      # Ustawienie JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Nadanie uprawnień do Gradle Wrapper
       - name: Grant execute permission for Gradle wrapper
         run: chmod +x ./gradlew
 
-      # Uruchomienie testów
       - name: Run tests
         run: ./gradlew test
 
-      # Debugowanie: listowanie dzienników backendu w razie błędu
       - name: Fetch Backend Logs
         if: failure()
         run: docker logs eduplanner-backend || true
 
-      # Debugowanie: logi bazy danych w razie błędu
       - name: Fetch Database Logs
         if: failure()
         run: docker logs eduplanner-database || true
 
-      # Zatrzymanie usług po zakończeniu
+      # Jeśli znowu będzie błąd, spróbuj podejrzeć zawartość docker-entrypoint-initdb.d
+      - name: Inspect initdb directory if fail
+        if: failure()
+        run: |
+          docker run --rm $(docker images --format "{{.Repository}}:{{.Tag}}" | grep eduplanner-server-backend) ls -l /docker-entrypoint-initdb.d || true
+
       - name: Stop and remove services
         if: always()
         run: docker-compose -f ./docker-compose.yml down
