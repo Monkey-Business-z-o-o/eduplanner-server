@@ -1,13 +1,14 @@
 services:
   database:
-    image: postgres:15
+    image: postgres:latest
     container_name: eduplanner-database
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-root}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
-      POSTGRES_DB: ${POSTGRES_DB:-eduplanner}
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: eduplanner
     volumes:
       - ./edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -18,7 +19,7 @@ services:
 
   backend:
     build:
-      context: ../eduplanner-server
+      context: .
     container_name: eduplanner-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-test}

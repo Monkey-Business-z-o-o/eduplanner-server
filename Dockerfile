@@ -8,4 +8,5 @@ COPY src ./src
 RUN chmod +x ./gradlew
 RUN ./gradlew build --no-daemon
 
-CMD ["java", "-jar", "build/libs/myapp-1.0-SNAPSHOT.jar"]
+CMD ["java", "-jar", "CMD ["sh", "-c", "java -jar build/libs/*.jar"]
+
