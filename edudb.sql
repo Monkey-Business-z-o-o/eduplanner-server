@@ -1,2 +1,0 @@
-CREATE DATABASE eduplanner;
-GRANT ALL PRIVILEGES ON DATABASE eduplanner TO root;
