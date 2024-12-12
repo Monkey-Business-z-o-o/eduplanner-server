@@ -27,20 +27,16 @@ jobs:
       - name: Verify environment variables
         run: |
           if [ "$SPRING_PROFILES_ACTIVE" != "test" ]; then
-            echo "SPRING_PROFILES_ACTIVE is not 'test'."
-            exit 1
+            echo "SPRING_PROFILES_ACTIVE is not 'test'." && exit 1
           fi
           if [ "$POSTGRES_USER" != "root" ]; then
-            echo "POSTGRES_USER is not 'root'."
-            exit 1
+            echo "POSTGRES_USER is not 'root'." && exit 1
           fi
           if [ "$POSTGRES_PASSWORD" != "root123" ]; then
-            echo "POSTGRES_PASSWORD is not 'root123'."
-            exit 1
+            echo "POSTGRES_PASSWORD is not 'root123'." && exit 1
           fi
           if [ "$POSTGRES_DB" != "eduplanner" ]; then
-            echo "POSTGRES_DB is not 'eduplanner'."
-            exit 1
+            echo "POSTGRES_DB is not 'eduplanner'." && exit 1
           fi
           echo "All environment variables are set correctly."
 
@@ -55,23 +51,28 @@ jobs:
           docker --version
           docker-compose --version
 
-      # Sprawdzenie zawartości kontekstu builda
       - name: Debug build context
         run: ls -lR ../eduplanner-server
 
-      # Wyświetlenie Dockerfile
       - name: Show Dockerfile
         run: cat ../eduplanner-server/Dockerfile
 
       - name: Build without cache
         run: docker-compose -f ./docker-compose.yml build --no-cache
 
-      # Uruchomienie kontenerów
       - name: Start services with Docker Compose
         run: docker-compose -f ./docker-compose.yml up -d
 
-      - name: List running Docker containers
-        run: docker ps -a
+      - name: Configure pg_hba.conf
+        run: |
+          docker exec eduplanner-database bash -c "
+          echo 'local   all             all                                     trust' > /var/lib/postgresql/data/pg_hba.conf &&
+          echo 'host    all             all             0.0.0.0/0               md5' >> /var/lib/postgresql/data/pg_hba.conf &&
+          cat /var/lib/postgresql/data/pg_hba.conf
+          "
+
+      - name: Restart PostgreSQL
+        run: docker exec eduplanner-database pg_ctl reload
 
       - name: Wait for Database to be Ready
         run: |
@@ -79,6 +80,9 @@ jobs:
             docker exec eduplanner-database pg_isready -U $POSTGRES_USER && break
             sleep 5
           done
+
+      - name: Inspect initdb directory
+        run: docker exec eduplanner-database ls -l /docker-entrypoint-initdb.d
 
       - name: Set up JDK
         uses: actions/setup-java@v3
@@ -100,11 +104,10 @@ jobs:
         if: failure()
         run: docker logs eduplanner-database || true
 
-      # Jeśli znowu będzie błąd, spróbuj podejrzeć zawartość docker-entrypoint-initdb.d
       - name: Inspect initdb directory if fail
         if: failure()
         run: |
-          docker run --rm $(docker images --format "{{.Repository}}:{{.Tag}}" | grep eduplanner-server-backend) ls -l /docker-entrypoint-initdb.d || true
+          docker exec eduplanner-database ls -l /docker-entrypoint-initdb.d || true
 
       - name: Stop and remove services
         if: always()
