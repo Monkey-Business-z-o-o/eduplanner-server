@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       # Sprawdzenie kodu
       - name: Checkout code
@@ -103,14 +102,15 @@ jobs:
         if: failure()
         run: docker logs eduplanner-database || true
 
+      # Debugowanie plików SQL (przed zamknięciem usług)
+      - name: Debug SQL Files
+        if: always()
+        run: |
+          ls -l
+          ls -l eduplanner-database || true
+          cat eduplanner-database/edudb.sql || true
+
       # Zatrzymanie usług po zakończeniu
       - name: Stop and remove services
         if: always()
         run: docker-compose -f ./docker-compose.yml down
-
-      - name: Debug SQL Files
-        run: |
-              ls -l
-              ls -l eduplanner-database
-              cat eduplanner-database/edudb.sql
-
