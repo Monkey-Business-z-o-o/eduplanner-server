@@ -22,9 +22,9 @@ jobs:
         run: |
           echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
           echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
-          echo "POSTGRES_USER=test_user" >> $GITHUB_ENV
+          echo "POSTGRES_USER=root" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
-          echo "POSTGRES_DB=edudb" >> $GITHUB_ENV
+          echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
 
       - name: Debug environment variables
         run: |
