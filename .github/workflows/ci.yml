@@ -20,11 +20,12 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
-          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
-          echo "POSTGRES_USER=root" >> $GITHUB_ENV
-          echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
-          echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
+          echo "DB_DATA_VOLUME=$DB_DATA_VOLUME_TEST" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=$SPRING_PROFILES_ACTIVE_TEST" >> $GITHUB_ENV
+          echo "POSTGRES_USER=$POSTGRES_USER_TEST" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD_TEST" >> $GITHUB_ENV
+          echo "POSTGRES_DB=$POSTGRES_DB_TEST" >> $GITHUB_ENV
+
 
       - name: Debug environment variables
         run: |
@@ -61,7 +62,7 @@ jobs:
           for i in {1..10}; do
             docker exec eduplanner-database pg_isready -U $POSTGRES_USER && break
             echo "Waiting for database..."
-            sleep 5
+            sleep 15
           done || (echo "Database is not ready. Fetching logs:" && docker logs eduplanner-database && exit 1)
 
       - name: Check Backend Health
