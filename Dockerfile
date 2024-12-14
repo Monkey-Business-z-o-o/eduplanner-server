@@ -1,17 +1,12 @@
-# Użycie obrazu z JDK
 FROM openjdk:17-jdk-slim
 
-# Ustawienie katalogu roboczego
 WORKDIR /app
+COPY gradlew gradlew.bat build.gradle settings.gradle ./
+COPY gradle ./gradle
+COPY src ./src
 
-# Kopiowanie wszystkich plików z repozytorium
-COPY . .
-
-# Nadanie uprawnień do wykonania dla Gradle Wrapper
 RUN chmod +x ./gradlew
-
-# Budowanie projektu
 RUN ./gradlew build --no-daemon
 
-# Komenda startowa (przykład - dostosuj w razie potrzeby)
-CMD ["java", "-jar", "build/libs/<nazwa_twojego_pliku.jar>"]
+CMD ["java", "-jar", "CMD ["sh", "-c", "java -jar build/libs/*.jar"]
+

@@ -1,34 +1,32 @@
-version: '3.8'
-
 services:
   database:
-    image: postgres:15
+    image: postgres:latest
     container_name: eduplanner-database
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-test_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
-      POSTGRES_DB: ${POSTGRES_DB:-edudb}
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: eduplanner
     volumes:
-      - ${DB_DATA_VOLUME:-/srv/test/db_data}:/var/lib/postgresql/data
-      - ../eduplanner-database/edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
+      - ./edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-test_user}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-root}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   backend:
     build:
-      context: ../eduplanner-server
+      context: .
     container_name: eduplanner-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-test}
-      POSTGRES_USER: ${POSTGRES_USER:-test_user}
+      POSTGRES_USER: ${POSTGRES_USER:-root}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
-      POSTGRES_DB: ${POSTGRES_DB:-edudb}
-      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-edudb}
+      POSTGRES_DB: ${POSTGRES_DB:-eduplanner}
+      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-eduplanner}
     depends_on:
       database:
         condition: service_healthy
@@ -37,3 +35,4 @@ services:
 
 volumes:
   db_data:
+    name: ci_db_data
