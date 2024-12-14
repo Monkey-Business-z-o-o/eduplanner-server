@@ -27,7 +27,8 @@ def timefoldVersion = "1.15.0"
 dependencies {
 	implementation platform("ai.timefold.solver:timefold-solver-bom:${timefoldVersion}")
 
-
+	// Spring Security
+	implementation "org.springframework.boot:spring-boot-starter-security"
 
 	// Spring-boot
 	implementation "org.springframework.boot:spring-boot-starter-web"
