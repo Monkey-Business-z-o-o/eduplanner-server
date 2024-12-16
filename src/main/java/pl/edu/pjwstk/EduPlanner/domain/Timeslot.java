@@ -3,15 +3,22 @@ package pl.edu.pjwstk.EduPlanner.domain;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 
+@Entity
 @JsonIdentityInfo(scope = Timeslot.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Timeslot {
 
     @PlanningId
-    private String id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private DayOfWeek dayOfWeek;
     private LocalTime startTime;
@@ -20,14 +27,14 @@ public class Timeslot {
     public Timeslot() {
     }
 
-    public Timeslot(String id, DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
+    public Timeslot(Long id, DayOfWeek dayOfWeek, LocalTime startTime, LocalTime endTime) {
         this.id = id;
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
         this.endTime = endTime;
     }
 
-    public Timeslot(String id, DayOfWeek dayOfWeek, LocalTime startTime) {
+    public Timeslot(Long id, DayOfWeek dayOfWeek, LocalTime startTime) {
         this(id, dayOfWeek, startTime, startTime.plusMinutes(50));
     }
 
@@ -40,7 +47,7 @@ public class Timeslot {
     // Getters and setters
     // ************************************************************************
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
@@ -54,5 +61,21 @@ public class Timeslot {
 
     public LocalTime getEndTime() {
         return endTime;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setDayOfWeek(DayOfWeek dayOfWeek) {
+        this.dayOfWeek = dayOfWeek;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
     }
 }
