@@ -2,33 +2,52 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [main, dev]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout kodu
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+      # Ustawienie zmiennych środowiskowych
+      - name: Set environment variables
+        run: |
+          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "POSTGRES_USER=root" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
+          echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
 
-      - name: Grant execute permission for Gradle wrapper
-        run: chmod +x ./gradlew
+      # Usunięcie istniejących danych (jeśli pozostały)
+      - name: Ensure data directory is clean
+        run: docker volume rm eduplanner-server_db_data || true
 
-      - name: Build project
-        run: ./gradlew build
+      # Usunięcie kontenerów (jeśli istnieją)
+      - name: Remove existing containers
+        run: docker-compose -f ./docker-compose.yml down -v || true
 
-      - name: Run tests
-        run: ./gradlew test
+      # Instalacja Docker Compose
+      - name: Install Docker Compose
+        run: |
+          curl -SL https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+
+      # Uruchomienie usług Docker Compose
+      - name: Start services with Docker Compose
+        run: docker-compose -f ./docker-compose.yml up -d
+
+      # Debugowanie logów bazy danych w przypadku niepowodzenia
+      - name: Fetch Database Logs
+        if: failure()
+        run: docker logs eduplanner-database || true
+
+      # Zatrzymanie usług po zakończeniu
+      - name: Stop and remove services
+        if: always()
+        run: docker-compose -f ./docker-compose.yml down

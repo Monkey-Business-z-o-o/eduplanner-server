@@ -85,4 +85,20 @@ public class Lesson {
     public void setRoom(Room room) {
         this.room = room;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public void setTeacher(String teacher) {
+        this.teacher = teacher;
+    }
+
+    public void setStudentGroup(String studentGroup) {
+        this.studentGroup = studentGroup;
+    }
 }
