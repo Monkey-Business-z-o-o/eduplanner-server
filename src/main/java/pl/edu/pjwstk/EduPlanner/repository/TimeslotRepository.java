@@ -5,5 +5,5 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import pl.edu.pjwstk.EduPlanner.domain.Timeslot;
 
 @RepositoryRestResource
-public interface TimeslotRepository extends JpaRepository<Timeslot, String> {
+public interface TimeslotRepository extends JpaRepository<Timeslot, Long> {
 }
