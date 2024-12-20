@@ -19,7 +19,7 @@ jobs:
       - name: Set environment variables
         run: |
           echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
-          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=dev" >> $GITHUB_ENV
           echo "POSTGRES_USER=root" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
           echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
