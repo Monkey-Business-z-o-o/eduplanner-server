@@ -1,17 +1,24 @@
-# Używamy obrazu z OpenJDK 17 (lub innej wersji, której używa Twój projekt)
+# Użyj obrazu OpenJDK 17 w wersji slim jako bazowego
 FROM openjdk:17-jdk-slim
 
-# Ustawiamy katalog roboczy w kontenerze
+# Ustaw zmienną środowiskową dla pracy z Gradle w trybie bez daemonów
+ENV GRADLE_OPTS="-Dorg.gradle.daemon=false"
+
+# Ustaw katalog roboczy
 WORKDIR /app
 
-# Kopiujemy pliki projektu
-COPY . .
+# Skopiuj pliki Gradle i konfigurację projektu
+COPY gradlew gradlew.bat build.gradle settings.gradle ./
+COPY gradle ./gradle
 
-# Kompilujemy aplikację przy użyciu Gradle/Maven
-RUN ./gradlew build -x test
+# Skopiuj kod źródłowy
+COPY src ./src
 
-# Przechodzimy do katalogu z gotowym artefaktem (np. plik JAR)
-WORKDIR /app/build/libs
+# Ustaw uprawnienia do pliku gradlew
+RUN chmod +x ./gradlew
 
-# Uruchamiamy aplikację
-CMD ["java", "-jar", "eduplanner-server.jar"]
+# Wykonaj budowanie projektu
+RUN ./gradlew build --no-daemon
+
+# Ustaw komendę uruchomienia
+CMD ["java", "-jar", "build/libs/*.jar"]

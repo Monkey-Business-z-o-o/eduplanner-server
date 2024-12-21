@@ -1,44 +1,55 @@
+version: "3.8"
+
 services:
   database:
-    image: postgres:latest
+    image: postgres:14
     container_name: eduplanner-database-dev
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root123
-      POSTGRES_DB: eduplanner_dev
+      POSTGRES_USER: ${POSTGRES_USER_TEST:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_TEST:-root123}
+      POSTGRES_DB: ${POSTGRES_DB_TEST:-eduplanner}
     volumes:
-      - ./edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
-      - db_data_dev:/var/lib/postgresql/data
+      - ${DB_DATA_VOLUME_TEST:-/srv/test/db_data}:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5433:5432" # Zmieniony port, aby nie kolidował z produkcją
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-root}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_TEST:-root}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - dev_network
 
   backend:
     image: gradle:latest
     container_name: eduplanner-backend-dev
     working_dir: /app
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     volumes:
       - .:/app
       - gradle_cache:/home/gradle/.gradle
     environment:
-      SPRING_PROFILES_ACTIVE: test
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root123
-      POSTGRES_DB: eduplanner_dev
-      DATABASE_URL: jdbc:postgresql://database:5432/eduplanner_dev
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE_TEST:-test}
+      POSTGRES_USER: ${POSTGRES_USER_TEST:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_TEST:-root123}
+      POSTGRES_DB: ${POSTGRES_DB_TEST:-eduplanner}
+      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB_TEST:-eduplanner}
     command: ["gradle", "bootRun"]
     depends_on:
       database:
         condition: service_healthy
     ports:
       - "8081:8080" # Zmieniony port, aby nie kolidował z produkcją
+    networks:
+      - dev_network
 
 volumes:
-  db_data_dev:
-    name: dev_db_data
   gradle_cache:
     name: dev_gradle_cache
+
+networks:
+  dev_network:
+    driver: bridge
