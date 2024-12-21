@@ -1,4 +1,4 @@
--- Włączenie rozszerzenia dblink (jeśli nie jest jeszcze włączone)
+-- Włączenie rozszerzenia dblink
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -10,7 +10,7 @@ BEGIN
     END IF;
 END $$;
 
--- Sprawdzenie i utworzenie bazy danych
+-- Tworzenie bazy danych, jeśli nie istnieje
 DO $$
 BEGIN
     IF NOT EXISTS (
