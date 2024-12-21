@@ -72,6 +72,10 @@ jobs:
         if: failure()
         run: docker inspect --format='{{json .State.Health}}' eduplanner-database-dev || true
 
+      - name: Debug environment variables
+        run: docker exec eduplanner-database-dev env
+
+
       # Wyświetlenie logów wszystkich kontenerów
       - name: Display all container logs
         if: always()
