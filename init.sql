@@ -1,16 +1,8 @@
 DO $$
 DECLARE
-    db_name TEXT := '${POSTGRES_DB}';
-    db_user TEXT := '${POSTGRES_USER}';
+    db_name TEXT := 'eduplanner'; -- Zmień na stałą wartość
+    db_user TEXT := 'root'; -- Zmień na stałą wartość
 BEGIN
-    IF db_name IS NULL THEN
-        RAISE EXCEPTION 'POSTGRES_DB is not set.';
-    END IF;
-
-    IF db_user IS NULL THEN
-        RAISE EXCEPTION 'POSTGRES_USER is not set.';
-    END IF;
-
     IF NOT EXISTS (
         SELECT 1
         FROM pg_database
