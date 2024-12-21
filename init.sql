@@ -1,4 +1,4 @@
--- Włączenie rozszerzenia dblink
+-- Włączenie rozszerzenia dblink, jeśli jeszcze nie jest włączone
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -10,17 +10,21 @@ BEGIN
     END IF;
 END $$;
 
--- Tworzenie bazy danych, jeśli nie istnieje
+-- Tworzenie bazy danych tylko wtedy, gdy nie istnieje
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT FROM pg_database WHERE datname = current_setting('POSTGRES_DB', true)
+        SELECT 1
+        FROM pg_database
+        WHERE datname = current_setting('POSTGRES_DB', true)
     ) THEN
-        PERFORM dblink_exec(
-            'dbname=' || current_setting('POSTGRES_DB', true) || 
-            ' user=' || current_setting('POSTGRES_USER', true),
-            'CREATE DATABASE ' || current_setting('POSTGRES_DB', true)
+        RAISE NOTICE 'Database does not exist, creating it now.';
+        EXECUTE format('CREATE DATABASE %I OWNER %I',
+            current_setting('POSTGRES_DB', true),
+            current_setting('POSTGRES_USER', true)
         );
+    ELSE
+        RAISE NOTICE 'Database already exists, skipping creation.';
     END IF;
 END $$;
 

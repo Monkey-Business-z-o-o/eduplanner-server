@@ -56,3 +56,29 @@ jobs:
       - name: Stop and remove services
         if: always()
         run: docker-compose -f ./docker-compose.yml down
+
+              # Weryfikacja rozszerzeń w bazie danych
+      - name: Verify database extensions
+        run: |
+        docker exec eduplanner-database-dev psql -U root -d postgres -c "CREATE EXTENSION IF NOT EXISTS dblink;"
+
+      - name: Set environment variables
+        run: |
+          echo "DATABASE_PORT=5433" >> $GITHUB_ENV
+
+      - name: Check container health
+        if: failure()
+        run: docker inspect --format='{{json .State.Health}}' eduplanner-database-dev || true
+
+
+      - name: Display all container logs
+        if: always()
+        run: |
+          docker ps -a
+          for container in $(docker ps -aq); do
+            echo "Logs for container $container:"
+            docker logs $container || true
+          done
+        
+
+
