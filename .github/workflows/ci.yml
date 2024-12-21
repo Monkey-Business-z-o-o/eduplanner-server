@@ -1,53 +1,47 @@
-name: CI Pipeline
+name: CI/CD Pipeline for Backend and Database
 
 on:
   push:
-    branches: [dev]
+    branches:
+      - main
   pull_request:
-    branches: [dev]
 
 jobs:
-  build:
+  integration-tests:
+    name: Run Integration Tests
     runs-on: ubuntu-latest
 
+    env:
+      DB_DATA_VOLUME: /srv/test/db_data
+      SPRING_PROFILES_ACTIVE: test
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: eduplanner
+
     steps:
-      # Checkout kodu
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Ustawienie zmiennych środowiskowych
-      - name: Set environment variables
+      - name: Set Up Docker Compose
         run: |
-          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
-          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
-          echo "POSTGRES_USER=root" >> $GITHUB_ENV
-          echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
-          echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
+          docker-compose -f ./docker-compose.yml down -v || true
+          docker-compose -f ./docker-compose.yml up -d
 
-      # Usunięcie istniejących danych (jeśli pozostały)
-      - name: Ensure data directory is clean
-        run: docker volume rm eduplanner-server_db_data || true
-
-      # Usunięcie kontenerów (jeśli istnieją)
-      - name: Remove existing containers
-        run: docker-compose -f ./docker-compose.yml down -v || true
-
-      # Instalacja Docker Compose
-      - name: Install Docker Compose
+      - name: Wait for Database to Be Ready
         run: |
-          curl -SL https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-          chmod +x /usr/local/bin/docker-compose
+          for i in {1..10}; do
+            docker exec eduplanner-database-dev pg_isready -U root && exit 0 || sleep 5
+          done
+          exit 1
 
-      # Uruchomienie usług Docker Compose
-      - name: Start services with Docker Compose
-        run: docker-compose -f ./docker-compose.yml up -d
+      - name: Check Logs for Debugging
+        run: |
+          docker logs eduplanner-database-dev || true
 
-      # Debugowanie logów bazy danych w przypadku niepowodzenia
-      - name: Fetch Database Logs
-        if: failure()
-        run: docker logs eduplanner-database || true
+      - name: Run Tests
+        run: |
+          docker exec eduplanner-backend-dev gradle test --no-daemon
 
-      # Zatrzymanie usług po zakończeniu
-      - name: Stop and remove services
+      - name: Tear Down Docker Compose
         if: always()
-        run: docker-compose -f ./docker-compose.yml down
+        run: docker-compose -f ./docker-compose.yml down -v
