@@ -57,20 +57,22 @@ jobs:
         if: always()
         run: docker-compose -f ./docker-compose.yml down
 
-              # Weryfikacja rozszerzeń w bazie danych
+      # Weryfikacja rozszerzeń w bazie danych
       - name: Verify database extensions
         run: |
-        docker exec eduplanner-database-dev psql -U root -d postgres -c "CREATE EXTENSION IF NOT EXISTS dblink;"
+          docker exec eduplanner-database-dev psql -U root -d postgres -c "CREATE EXTENSION IF NOT EXISTS dblink;"
 
-      - name: Set environment variables
+      # Dodanie zmiennej DATABASE_PORT
+      - name: Set database port environment variable
         run: |
           echo "DATABASE_PORT=5433" >> $GITHUB_ENV
 
+      # Weryfikacja stanu kontenera
       - name: Check container health
         if: failure()
         run: docker inspect --format='{{json .State.Health}}' eduplanner-database-dev || true
 
-
+      # Wyświetlenie logów wszystkich kontenerów
       - name: Display all container logs
         if: always()
         run: |
@@ -79,6 +81,3 @@ jobs:
             echo "Logs for container $container:"
             docker logs $container || true
           done
-        
-
-
