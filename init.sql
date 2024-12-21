@@ -1,32 +1,24 @@
--- Włączenie rozszerzenia dblink, jeśli jeszcze nie jest włączone
 DO $$
+DECLARE
+    db_name TEXT := current_setting('POSTGRES_DB', true);
+    db_user TEXT := current_setting('POSTGRES_USER', true);
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_available_extensions
-        WHERE name = 'dblink'
-    ) THEN
-        CREATE EXTENSION dblink;
+    IF db_name IS NULL THEN
+        RAISE EXCEPTION 'POSTGRES_DB is not set.';
     END IF;
-END $$;
 
--- Tworzenie bazy danych tylko wtedy, gdy nie istnieje
-DO $$
-BEGIN
+    IF db_user IS NULL THEN
+        RAISE EXCEPTION 'POSTGRES_USER is not set.';
+    END IF;
+
     IF NOT EXISTS (
         SELECT 1
         FROM pg_database
-        WHERE datname = current_setting('POSTGRES_DB', true)
+        WHERE datname = db_name
     ) THEN
         RAISE NOTICE 'Database does not exist, creating it now.';
-        EXECUTE format('CREATE DATABASE %I OWNER %I',
-            current_setting('POSTGRES_DB', true),
-            current_setting('POSTGRES_USER', true)
-        );
+        EXECUTE format('CREATE DATABASE %I OWNER %I', db_name, db_user);
     ELSE
         RAISE NOTICE 'Database already exists, skipping creation.';
     END IF;
 END $$;
-
--- Nadanie uprawnień użytkownikowi
-GRANT ALL PRIVILEGES ON DATABASE eduplanner TO root;
