@@ -75,6 +75,11 @@ jobs:
       - name: Debug environment variables
         run: docker exec eduplanner-database-dev env
 
+      - name: Check init.sql content
+        run: docker exec eduplanner-database-dev cat /docker-entrypoint-initdb.d/init.sql
+
+      - name: Check PostgreSQL logs
+        run: docker logs eduplanner-database-dev
 
       # Wyświetlenie logów wszystkich kontenerów
       - name: Display all container logs

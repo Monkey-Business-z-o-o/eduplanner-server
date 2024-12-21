@@ -1,7 +1,7 @@
 DO $$
 DECLARE
-    db_name TEXT := current_setting('POSTGRES_DB', true);
-    db_user TEXT := current_setting('POSTGRES_USER', true);
+    db_name TEXT := '${POSTGRES_DB}';
+    db_user TEXT := '${POSTGRES_USER}';
 BEGIN
     IF db_name IS NULL THEN
         RAISE EXCEPTION 'POSTGRES_DB is not set.';
