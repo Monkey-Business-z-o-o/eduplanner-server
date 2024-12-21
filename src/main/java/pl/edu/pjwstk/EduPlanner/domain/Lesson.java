@@ -4,12 +4,16 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import jakarta.persistence.*;
 
+@Entity
 @PlanningEntity
 public class Lesson {
 
     @PlanningId
-    private String id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String subject;
     private String teacher;
@@ -17,23 +21,25 @@ public class Lesson {
 
     @JsonIdentityReference
     @PlanningVariable
+    @ManyToOne
     private Timeslot timeslot;
 
     @JsonIdentityReference
     @PlanningVariable
+    @ManyToOne
     private Room room;
 
     public Lesson() {
     }
 
-    public Lesson(String id, String subject, String teacher, String studentGroup) {
+    public Lesson(Long id, String subject, String teacher, String studentGroup) {
         this.id = id;
         this.subject = subject;
         this.teacher = teacher;
         this.studentGroup = studentGroup;
     }
 
-    public Lesson(String id, String subject, String teacher, String studentGroup, Timeslot timeslot, Room room) {
+    public Lesson(Long id, String subject, String teacher, String studentGroup, Timeslot timeslot, Room room) {
         this(id, subject, teacher, studentGroup);
         this.timeslot = timeslot;
         this.room = room;
@@ -48,7 +54,7 @@ public class Lesson {
     // Getters and setters
     // ************************************************************************
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
