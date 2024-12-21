@@ -28,10 +28,6 @@ jobs:
       - name: Ensure data directory is clean
         run: docker volume rm eduplanner-server_db_data || true
 
-      # Usunięcie kontenerów (jeśli istnieją)
-      - name: Remove existing containers
-        run: docker-compose -f ./docker-compose.yml down -v || true
-
       # Instalacja Docker Compose
       - name: Install Docker Compose
         run: |
@@ -42,51 +38,52 @@ jobs:
       - name: Start services with Docker Compose
         run: docker-compose -f ./docker-compose.yml up -d
 
-      # Debugowanie logów bazy danych w przypadku niepowodzenia
-      - name: Fetch Database Logs
-        if: failure()
-        run: docker logs eduplanner-database-dev || true
-
-      # Debugowanie logów backendu w przypadku niepowodzenia
-      - name: Fetch Backend Logs
-        if: failure()
-        run: docker logs eduplanner-backend-dev || true
-
-      # Zatrzymanie usług po zakończeniu
-      - name: Stop and remove services
-        if: always()
-        run: docker-compose -f ./docker-compose.yml down
+      # Oczekiwanie na zdrowy stan kontenera
+      - name: Wait for database to be ready
+        run: |
+          for i in {1..10}; do
+            if [ "$(docker inspect -f '{{json .State.Health.Status}}' eduplanner-database-dev)" = "\"healthy\"" ]; then
+              echo "Database is healthy";
+              break;
+            fi;
+            echo "Waiting for database...";
+            sleep 5;
+          done
 
       # Weryfikacja rozszerzeń w bazie danych
       - name: Verify database extensions
-        run: |
-          docker exec eduplanner-database-dev psql -U root -d postgres -c "CREATE EXTENSION IF NOT EXISTS dblink;"
+        run: docker exec eduplanner-database-dev psql -U root -d postgres -c "CREATE EXTENSION IF NOT EXISTS dblink;"
 
-      # Dodanie zmiennej DATABASE_PORT
-      - name: Set database port environment variable
-        run: |
-          echo "DATABASE_PORT=5433" >> $GITHUB_ENV
-
-      # Weryfikacja stanu kontenera
-      - name: Check container health
-        if: failure()
-        run: docker inspect --format='{{json .State.Health}}' eduplanner-database-dev || true
-
+      # Debugowanie zmiennych środowiskowych
       - name: Debug environment variables
         run: docker exec eduplanner-database-dev env
 
+      # Debugowanie zawartości init.sql
       - name: Check init.sql content
         run: docker exec eduplanner-database-dev cat /docker-entrypoint-initdb.d/init.sql
 
+      # Debugowanie logów PostgreSQL
       - name: Check PostgreSQL logs
         run: docker logs eduplanner-database-dev
 
+      # Dodanie zmiennej DATABASE_PORT
+      - name: Set database port environment variable
+        run: echo "DATABASE_PORT=5433" >> $GITHUB_ENV
+
+      # Weryfikacja stanu kontenera
+      - name: Check container health
+        run: docker inspect --format='{{json .State.Health}}' eduplanner-database-dev
+
       # Wyświetlenie logów wszystkich kontenerów
       - name: Display all container logs
-        if: always()
         run: |
           docker ps -a
           for container in $(docker ps -aq); do
             echo "Logs for container $container:"
             docker logs $container || true
           done
+
+      # Zatrzymanie usług po zakończeniu
+      - name: Stop and remove services
+        if: always()
+        run: docker-compose -f ./docker-compose.yml down
