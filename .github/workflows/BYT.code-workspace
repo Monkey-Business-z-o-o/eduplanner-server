@@ -1,16 +1,11 @@
 {
-    "folders": [
-        {
-            "path": "../../../eduplaner-deploy"
-        },
-        {
-            "path": "../../../eduplanner-database"
-        },
-        {
-            "path": "../.."
-        },
-        {
-            "path": "../../../eduplanner-app"
-        }
-    ]
+	"folders": [
+		{
+			"path": "../../../../BYT"
+		},
+		{
+			"path": "../../.."
+		}
+	],
+	"settings": {}
 }
