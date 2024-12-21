@@ -1,47 +1,57 @@
-name: CI/CD Pipeline for Backend and Database
+name: CI Pipeline
 
 on:
   push:
     branches:
-      - main
+      - dev
   pull_request:
+    branches:
+      - dev
 
 jobs:
-  integration-tests:
-    name: Run Integration Tests
+  build:
     runs-on: ubuntu-latest
 
-    env:
-      DB_DATA_VOLUME: /srv/test/db_data
-      SPRING_PROFILES_ACTIVE: test
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root123
-      POSTGRES_DB: eduplanner
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set Up Docker Compose
+      - name: Set environment variables
         run: |
-          docker-compose -f ./docker-compose.yml down -v || true
-          docker-compose -f ./docker-compose.yml up -d
+          echo "DB_DATA_VOLUME=/srv/test/db_data" >> $GITHUB_ENV
+          echo "SPRING_PROFILES_ACTIVE=test" >> $GITHUB_ENV
+          echo "POSTGRES_USER=root" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=root123" >> $GITHUB_ENV
+          echo "POSTGRES_DB=eduplanner" >> $GITHUB_ENV
 
-      - name: Wait for Database to Be Ready
-        run: |
-          for i in {1..10}; do
-            docker exec eduplanner-database-dev pg_isready -U root && exit 0 || sleep 5
-          done
-          exit 1
+      - name: Ensure data directory is clean
+        run: docker volume rm eduplanner-server_db_data || true
 
-      - name: Check Logs for Debugging
+      - name: Remove existing containers
+        run: docker-compose -f ./docker-compose.yml down -v || true
+
+      - name: Install Docker Compose
         run: |
-          docker logs eduplanner-database-dev || true
+          curl -SL https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+
+      - name: Prune Docker System
+        run: docker system prune -af || true
+
+      - name: Start services with Docker Compose
+        run: docker-compose -f ./docker-compose.yml up -d
 
       - name: Run Tests
-        run: |
-          docker exec eduplanner-backend-dev gradle test --no-daemon
+        run: ./gradlew test
 
-      - name: Tear Down Docker Compose
+      - name: Fetch Database Logs
+        if: failure()
+        run: docker logs eduplanner-database || true
+
+      - name: Fetch Backend Logs
+        if: failure()
+        run: docker logs eduplanner-backend || true
+
+      - name: Stop and remove services
         if: always()
-        run: docker-compose -f ./docker-compose.yml down -v
+        run: docker-compose -f ./docker-compose.yml down
