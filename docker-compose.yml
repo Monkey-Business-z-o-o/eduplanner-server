@@ -1,55 +1,38 @@
-version: "3.8"
-
 services:
   database:
-    image: postgres:14
-    container_name: eduplanner-database-dev
+    image: postgres:latest
+    container_name: eduplanner-database
     environment:
-      POSTGRES_USER: ${POSTGRES_USER_TEST:-root}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_TEST:-root123}
-      POSTGRES_DB: ${POSTGRES_DB_TEST:-eduplanner}
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root123
+      POSTGRES_DB: eduplanner
     volumes:
-      - ${DB_DATA_VOLUME_TEST:-/srv/test/db_data}:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./edudb.sql:/docker-entrypoint-initdb.d/edudb.sql
+      - db_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432" # Zmieniony port, aby nie kolidował z produkcją
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER_TEST:-root}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-root}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - dev_network
 
   backend:
-    image: gradle:latest
-    container_name: eduplanner-backend-dev
-    working_dir: /app
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - .:/app
-      - gradle_cache:/home/gradle/.gradle
+    container_name: eduplanner-backend
     environment:
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE_TEST:-test}
-      POSTGRES_USER: ${POSTGRES_USER_TEST:-root}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_TEST:-root123}
-      POSTGRES_DB: ${POSTGRES_DB_TEST:-eduplanner}
-      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB_TEST:-eduplanner}
-    command: ["gradle", "bootRun"]
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-test}
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root123}
+      POSTGRES_DB: ${POSTGRES_DB:-eduplanner}
+      DATABASE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-eduplanner}
     depends_on:
       database:
         condition: service_healthy
     ports:
-      - "8081:8080" # Zmieniony port, aby nie kolidował z produkcją
-    networks:
-      - dev_network
+      - "8080:8080"
 
 volumes:
-  gradle_cache:
-    name: dev_gradle_cache
-
-networks:
-  dev_network:
-    driver: bridge
+  db_data:
+    name: ci_db_data
