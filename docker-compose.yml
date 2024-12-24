@@ -11,6 +11,8 @@ services:
     volumes:
       - ${DB_DATA_VOLUME_TEST:-/srv/test/db_data}:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: >
+        bash -c "rm -rf /var/lib/postgresql/data/* && docker-entrypoint.sh postgres"
     ports:
       - "5433:5432" # Zmieniony port, aby nie kolidował z produkcją
     healthcheck:
