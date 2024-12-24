@@ -1,1 +1,1 @@
-CREATE DATABASE eduplanner OWNER root;
+CREATE DATABASE root OWNER root;
