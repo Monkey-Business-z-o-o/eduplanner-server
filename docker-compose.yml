@@ -5,13 +5,14 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root123
-      POSTGRES_DB: root
+      POSTGRES_DB: edudb
     volumes:
-      - ${DB_DATA_VOLUME_TEST:-/srv/test/db_data}:/var/lib/postgresql/data
+      - eduplanner-db-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U root" ]
+      test: [ "CMD-SHELL", "pg_isready -U root -d edudb" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,9 +24,9 @@ services:
       dockerfile: Dockerfile
     container_name: ${CONTAINER_NAME_BACKEND:-eduplanner-backend-dev}
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://eduplanner-database-dev:5432/root
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
+     SPRING_DATASOURCE_URL: jdbc:postgresql://eduplanner-database-dev:5432/edudb
+     SPRING_DATASOURCE_USERNAME: root
+     SPRING_DATASOURCE_PASSWORD: root123
     depends_on:
       database:
         condition: service_healthy
@@ -33,6 +34,10 @@ services:
       - "${BACKEND_PORT:-8081}:8081"
     networks:
       - dev_network
+
 networks:
   dev_network:
     driver: bridge
+
+volumes:
+  eduplanner-db-data: {}
