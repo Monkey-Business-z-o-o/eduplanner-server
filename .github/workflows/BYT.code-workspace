@@ -5,7 +5,12 @@
 		},
 		{
 			"path": "../../.."
+		},
+		{
+			"path": "../../../eduplaner-deploy"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
 }
