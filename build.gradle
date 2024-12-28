@@ -25,38 +25,39 @@ ext {
 def timefoldVersion = "1.15.0"
 
 dependencies {
-	implementation platform("ai.timefold.solver:timefold-solver-bom:${timefoldVersion}")
-	implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.2'
+	// PostgreSQL Driver
+	implementation 'org.postgresql:postgresql:42.7.2'
+
+	// Jackson for JSON processing
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-	// Spring-boot
-	implementation "org.springframework.boot:spring-boot-starter-web"
-	implementation "org.springframework.boot:spring-boot-starter-data-rest"
-	implementation "org.springframework.boot:spring-boot-starter-data-jpa"
-	implementation "org.springframework.data:spring-data-rest-webmvc"
-	implementation "ai.timefold.solver:timefold-solver-spring-boot-starter"
+	// Spring Boot dependencies
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-rest'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.data:spring-data-rest-webmvc'
+	implementation 'ai.timefold.solver:timefold-solver-spring-boot-starter'
 
-	// Swagger
-	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0"
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	// Swagger UI
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // Testing
-	testImplementation("org.springframework.boot:spring-boot-starter-test")
-	testImplementation("ai.timefold.solver:timefold-solver-test")
-	testImplementation("org.springframework:spring-webflux")
-	testImplementation "org.awaitility:awaitility"
-	testImplementation "org.assertj:assertj-core:3.26.3"
+	// Timefold Solver dependencies
+	implementation platform("ai.timefold.solver:timefold-solver-bom:${timefoldVersion}")
 
-	// UI
-	// No webjar locator; incompatible in native mode;
-	// see https://github.com/spring-projects/spring-framework/issues/27619
-	// and https://github.com/webjars/webjars-locator-core/issues/96
-	// runtimeOnly "org.webjars:webjars-locator:0.50"
-	runtimeOnly "ai.timefold.solver:timefold-solver-webui"
-	runtimeOnly "org.webjars:bootstrap:5.2.3"
-	runtimeOnly "org.webjars:jquery:3.6.4"
-	runtimeOnly "org.webjars:font-awesome:5.15.1"
-	runtimeOnly "org.webjars.npm:js-joda:1.11.0"
+	// Testing dependencies
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'ai.timefold.solver:timefold-solver-test'
+	testImplementation 'org.springframework:spring-webflux'
+	testImplementation 'org.awaitility:awaitility'
+	testImplementation 'org.assertj:assertj-core:3.26.3'
+
+	// Runtime dependencies for web UI
+	runtimeOnly 'ai.timefold.solver:timefold-solver-webui'
+	runtimeOnly 'org.webjars:bootstrap:5.2.3'
+	runtimeOnly 'org.webjars:jquery:3.6.4'
+	runtimeOnly 'org.webjars:font-awesome:5.15.1'
+	runtimeOnly 'org.webjars.npm:js-joda:1.11.0'
 }
 
 dependencyManagement {
@@ -67,4 +68,13 @@ dependencyManagement {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('build') {
+	doFirst {
+		println "Starting build for project ${project.name}"
+	}
+	doLast {
+		println "Build completed for project ${project.name}"
+	}
 }

@@ -1,16 +1,20 @@
-DO $$
-DECLARE
-    db_name TEXT := 'eduplanner'; -- Zmień na stałą wartość
-    db_user TEXT := 'root'; -- Zmień na stałą wartość
+-- Ensure the 'root' role exists
+DO
+$$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_database
-        WHERE datname = db_name
-    ) THEN
-        RAISE NOTICE 'Database does not exist, creating it now.';
-        EXECUTE format('CREATE DATABASE %I OWNER %I', db_name, db_user);
-    ELSE
-        RAISE NOTICE 'Database already exists, skipping creation.';
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'root') THEN
+        CREATE ROLE root WITH LOGIN PASSWORD 'root123';
+        ALTER ROLE root CREATEDB;
     END IF;
-END $$;
+END
+$$;
+
+-- Create the 'edudb' database if it doesn't exist
+DO
+$$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'edudb') THEN
+        PERFORM dblink_exec('dbname=postgres user=root password=root123', 'CREATE DATABASE edudb OWNER root');
+    END IF;
+END
+$$;
